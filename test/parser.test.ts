@@ -1,7 +1,7 @@
 import { parseCql } from "../src/cql/parser/parser";
 import { BinOp, CQLAtom } from "../src/types/cql";
 import { InvalidQueryError } from "../src/cql/parser/error";
-import { CQL_BINARY_OPERATORS, CQL_FIELDS, CQL_STRING_OPERATORS } from "../src/cql/parser/constants";
+import { CQL_BINARY_OPERATORS, CQL_FIELDS, CQL_LIST_OPERATORS, CQL_STRING_OPERATORS } from "../src/cql/parser/constants";
 
 const titleQuery: CQLAtom = {
     operator: CQL_STRING_OPERATORS.CONTAINS,
@@ -19,6 +19,12 @@ const labelQuery: CQLAtom = {
     operator: CQL_STRING_OPERATORS.EQUALS,
     keyword: CQL_FIELDS.LABEL,
     value: "test"
+};
+
+const labelListQuery: CQLAtom = {
+    operator: CQL_LIST_OPERATORS.IN,
+    keyword: CQL_FIELDS.LABEL,
+    value: ["test", "dev", "abc"]
 };
 
 const multQuery: BinOp = {
@@ -39,6 +45,16 @@ const precedenceQuery: BinOp = {
     term2: multQuery2
 };
 
+const precedenceQuery2: BinOp = {
+    operator: CQL_BINARY_OPERATORS.AND,
+    term1: {
+        operator: CQL_BINARY_OPERATORS.OR,
+        term1: labelQuery,
+        term2: spaceQuery
+    },
+    term2: titleQuery
+};
+
 describe("CQL Parser", () => {
     test("Can parse title query", () => {
         expect(parseCql("title ~ \"auto\"")).toEqual(titleQuery);
@@ -56,8 +72,16 @@ describe("CQL Parser", () => {
         expect(() => parseCql( "title ~ auto")).toThrowError(InvalidQueryError);
     });
 
+    test("Rejects empty string", () => {
+        expect(() => parseCql( "")).toThrowError(InvalidQueryError);
+    });
+
     test("Can parse space query", () => {
         expect(parseCql("space = 'DEV'")).toEqual(spaceQuery);
+    });
+
+    test("Can parse querywith list", () => {
+        expect(parseCql("label in (test, dev, abc)")).toEqual(labelListQuery);
     });
 
 
@@ -77,9 +101,13 @@ describe("CQL Parser", () => {
     test("Invalid Parse", () => {
         expect(() => parseCql("xyz")).toThrowError(InvalidQueryError);
     });
-
+    
     test("Correct precedence", () => {
         expect(parseCql("label = 'test' OR space = 'DEV' AND title ~ \"auto\"")).toEqual(precedenceQuery);
+    });
+
+    test("Correct precedence with brackets", () => {
+        expect(parseCql("(label = 'test' OR space = 'DEV') AND title ~ \"auto\"")).toEqual(precedenceQuery2);
     });
 
 });

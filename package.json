@@ -18,7 +18,9 @@
         "watch-test": "npm run test -- --watchAll",
         "watch-ts": "tsc -w"
     },
-    "dependencies": {},
+    "dependencies": {
+        "@masala/parser": "^1.0.0"
+    },
     "devDependencies": {
         "@types/eslint": "7.2.6",
         "@types/jest": "26.0.20",
