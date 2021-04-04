@@ -1,86 +1,48 @@
 import { parseCql } from "../src/cql/parser/parser";
-import { BinOp, CQLAtom } from "../src/types/cql";
 import { InvalidQueryError } from "../src/cql/parser/error";
-import { CQL_BINARY_OPERATORS, CQL_FIELDS, CQL_LIST_OPERATORS, CQL_STRING_OPERATORS } from "../src/cql/parser/constants";
-
-const titleQuery: CQLAtom = {
-    operator: CQL_STRING_OPERATORS.CONTAINS,
-    keyword: CQL_FIELDS.TITLE,
-    value: "auto"
-};
-
-const spaceQuery: CQLAtom = {
-    operator: CQL_STRING_OPERATORS.EQUALS,
-    keyword: CQL_FIELDS.SPACE,
-    value: "dev"
-};
-
-const labelQuery: CQLAtom = {
-    operator: CQL_STRING_OPERATORS.EQUALS,
-    keyword: CQL_FIELDS.LABEL,
-    value: "test"
-};
-
-const labelListQuery: CQLAtom = {
-    operator: CQL_LIST_OPERATORS.IN,
-    keyword: CQL_FIELDS.LABEL,
-    value: ["test", "dev", "abc"]
-};
-
-const multQuery: BinOp = {
-    operator: CQL_BINARY_OPERATORS.AND,
-    term1: titleQuery,
-    term2: spaceQuery,
-};
-
-const multQuery2: BinOp = {
-    operator: CQL_BINARY_OPERATORS.AND,
-    term1: spaceQuery,
-    term2: titleQuery,
-};
-
-const precedenceQuery: BinOp = {
-    operator: CQL_BINARY_OPERATORS.OR,
-    term1: labelQuery,
-    term2: multQuery2
-};
-
-const precedenceQuery2: BinOp = {
-    operator: CQL_BINARY_OPERATORS.AND,
-    term1: {
-        operator: CQL_BINARY_OPERATORS.OR,
-        term1: labelQuery,
-        term2: spaceQuery
-    },
-    term2: titleQuery
-};
+import { spaceQuery, labelListQuery, multQuery, multQuery2, precedenceQuery, precedenceQuery2, makeTitleQuery } from "./testData";
 
 describe("CQL Parser", () => {
     test("Can parse title query", () => {
-        expect(parseCql("title ~ \"auto\"")).toEqual(titleQuery);
+        expect(parseCql("title ~ \"auto\"")).toEqual(makeTitleQuery("auto"));
     });
 
     test("Is case insensitive", () => {
-        expect(parseCql("title ~ \"AUTO\"")).toEqual(titleQuery);
+        expect(parseCql("title ~ \"AUTO\"")).toEqual(makeTitleQuery("auto"));
     });
 
-    test("Allows sigle quotes", () => {
-        expect(parseCql( "title ~ 'auto'")).toEqual(titleQuery);
+    test("Allow single quotes", () => {
+        expect(parseCql( "title ~ 'auto'")).toEqual(makeTitleQuery("auto"));
     });
 
-    test("Force quotation marks", () => {
+    test("allow Space in quotes", () => {
+        expect(parseCql( "title ~ 'auto test'")).toEqual(makeTitleQuery("auto test"));
+    });
+    test("allow digits in quotes", () => {
+        expect(parseCql( "title ~ 'auto123'")).toEqual(makeTitleQuery("auto123"));
+    });
+
+    test("No whitespace", () => {
+        expect(parseCql("title~\"auto\"")).toEqual(makeTitleQuery("auto"));
+    });
+
+    test("Forces quotation marks", () => {
         expect(() => parseCql( "title ~ auto")).toThrowError(InvalidQueryError);
     });
 
     test("Rejects empty string", () => {
-        expect(() => parseCql( "")).toThrowError(InvalidQueryError);
+        expect(() => parseCql("")).toThrowError(InvalidQueryError);
+    });
+
+    test("Consumes entire query", () => {
+        expect(() => parseCql( "title ~ 'auto' dcdwcwed")).toThrowError(InvalidQueryError);
     });
 
     test("Can parse space query", () => {
         expect(parseCql("space = 'DEV'")).toEqual(spaceQuery);
     });
 
-    test("Can parse querywith list", () => {
+    test("Can parse query with list", () => {
         expect(parseCql("label in (test, dev, abc)")).toEqual(labelListQuery);
     });
 
@@ -100,6 +62,10 @@ describe("CQL Parser", () => {
 
     test("Invalid Parse", () => {
         expect(() => parseCql("xyz")).toThrowError(InvalidQueryError);
+    });
+
+    test("Invalid Parse 2", () => {
+        expect(() => parseCql("title > \"auto\"")).toThrowError(InvalidQueryError);
     });
     
     test("Correct precedence", () => {

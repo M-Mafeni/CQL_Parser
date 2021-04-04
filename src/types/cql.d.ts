@@ -16,13 +16,13 @@ type CQLAtom = CQLSingleAtom | CQLListAtom;
 
 interface CQLSingleAtom {
     operator: CQL_STRING_OPERATORS;
-    keyword: CQL_FIELDS;
+    field: CQL_FIELDS;
     value: string;
 }
 
 interface CQLListAtom {
     operator: CQL_LIST_OPERATORS;
-    keyword: CQL_FIELDS;
+    field: CQL_FIELDS;
     value: string[];
 }
 
