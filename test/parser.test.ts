@@ -1,7 +1,7 @@
-import { parseCql } from "./parser";
-import { BinOp, CQLAtom } from "../../types/cql";
-import { InvalidQueryError } from "./error";
-import { CQL_BINARY_OPERATORS, CQL_FIELDS, CQL_STRING_OPERATORS } from "./constants";
+import { parseCql } from "../src/cql/parser/parser";
+import { BinOp, CQLAtom } from "../src/types/cql";
+import { InvalidQueryError } from "../src/cql/parser/error";
+import { CQL_BINARY_OPERATORS, CQL_FIELDS, CQL_STRING_OPERATORS } from "../src/cql/parser/constants";
 
 const titleQuery: CQLAtom = {
     operator: CQL_STRING_OPERATORS.CONTAINS,
@@ -31,6 +31,12 @@ const multQuery2: BinOp = {
     operator: CQL_BINARY_OPERATORS.AND,
     term1: spaceQuery,
     term2: titleQuery,
+};
+
+const precedenceQuery: BinOp = {
+    operator: CQL_BINARY_OPERATORS.OR,
+    term1: labelQuery,
+    term2: multQuery2
 };
 
 describe("CQL Parser", () => {
@@ -73,7 +79,7 @@ describe("CQL Parser", () => {
     });
 
     test("Correct precedence", () => {
-        expect(parseCql("label = 'test' OR space = 'DEV' AND title ~ \"auto\""));
+        expect(parseCql("label = 'test' OR space = 'DEV' AND title ~ \"auto\"")).toEqual(precedenceQuery);
     });
 
 });
