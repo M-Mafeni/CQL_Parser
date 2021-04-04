@@ -29,7 +29,8 @@ const cqlSingleAtomParser: SingleParser<CQLSingleAtom> = token(cqlFieldParser)
 
 export function parseCql(query: string): CQLTerm | Error {
     const parseResponse = cqlSingleAtomParser.parse(Streams.ofString(query.toLowerCase()));
-    if (parseResponse.isAccepted) {
+    if (parseResponse.isAccepted()) {
+        console.log(parseResponse.isAccepted);
         return parseResponse.value;
     } else {
         throw new InvalidQueryError();

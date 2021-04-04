@@ -22,8 +22,16 @@ describe("CQL Parser", () => {
         expect(parseCql( "title ~ 'auto123'")).toEqual(makeTitleQuery("auto123"));
     });
 
+    test("allow special characters in quotes", () => {
+        expect(parseCql( "title ~ 'auto&test$%-'")).toEqual(makeTitleQuery("auto&test$%-"));
+    });
+
     test("No whitespace", () => {
         expect(parseCql("title~\"auto\"")).toEqual(makeTitleQuery("auto"));
+    });
+
+    test("Ignore extra whitespace", () => {
+        expect(parseCql("title ~ \"auto\"     ")).toEqual(makeTitleQuery("auto"));
     });
 
     test("Forces quotation marks", () => {
@@ -40,6 +48,14 @@ describe("CQL Parser", () => {
 
     test("Can parse space query", () => {
         expect(parseCql("space = 'DEV'")).toEqual(spaceQuery);
+    });
+
+    test("Rejects nested quotes", () => {
+        expect(() => parseCql("space = \"DEV\"123\"")).toThrowError(InvalidQueryError);
+    });
+
+    test("Allow mixed quotes", () => {
+        expect(parseCql("title ~ \"tim's plan\"")).toEqual(makeTitleQuery("tim's plan"));
     });
 
     test("Can parse query with list", () => {
