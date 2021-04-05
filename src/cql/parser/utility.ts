@@ -1,5 +1,5 @@
-import { F, C, TupleParser, SingleParser, VoidParser } from "@masala/parser";
-import { CQL_FIELDS, CQL_STRING_OPERATORS } from "./constants";
+import { F, C, TupleParser, SingleParser, Streams } from "@masala/parser";
+import { CQL_FIELDS, CQL_LIST_OPERATORS, CQL_STRING_OPERATORS } from "./constants";
 // Reject these characters for now as they have special meaning in CQL text searches
 
 export const betweenBrackets: SingleParser<string> = C.char("(").drop()
@@ -21,14 +21,13 @@ const wordWithoutComma = C.charNotIn(",").rep().map(chars => chars.join(""));
 function sepByCommasHelper() {
     return F.try(emptyString)
     .or(
-        C.char(",").drop()
+        token(C.char(",").drop())
         .then(F.lazy(sepByCommasBuilder))
         );
 }
 
 const emptyString = F.eos().drop();
-const sepByCommasInternal = sepByCommasBuilder().array();
-export const sepByCommas: SingleParser<string[]>  = sepByCommasInternal;
+export const sepByCommas: SingleParser<string[]>  = sepByCommasBuilder().array().map(values => values.map(removeQuotes));
 const quoteParser = (quotationMark: "\"" | "'"): TupleParser<string> => C.char(quotationMark).drop()
     .then(F.moveUntil(quotationMark))
     .then(C.char(quotationMark).drop());
@@ -51,7 +50,7 @@ export function getCqlField(s: string): CQL_FIELDS {
     }
 }
 
-export function getCqlStringOperator(s: string): CQL_STRING_OPERATORS {
+export function getCqlOperator(s: string): CQL_STRING_OPERATORS | CQL_LIST_OPERATORS {
     switch(s) {
         case "=":
             return CQL_STRING_OPERATORS.EQUALS;
@@ -61,5 +60,20 @@ export function getCqlStringOperator(s: string): CQL_STRING_OPERATORS {
             return CQL_STRING_OPERATORS.CONTAINS;
         case "!~":
             return CQL_STRING_OPERATORS.NOT_CONTAINS;
+        case "in":
+            return CQL_LIST_OPERATORS.IN;
+        case "not in":
+            return CQL_LIST_OPERATORS.NOT_IN;
+    }
+}
+
+// remove quotation marks from string and return int
+export function removeQuotes(s: string) : string {
+    const parseResponse = betweenQuotesParser.first().parse(Streams.ofString(s));
+    if(parseResponse.isAccepted()) {
+        return parseResponse.value;
+    } else {
+        // If it couldn't parse might mean string should be left as is
+        return s;
     }
 }
