@@ -5,7 +5,7 @@ import { CQL_FIELDS, CQL_LIST_OPERATORS, CQL_STRING_OPERATORS } from "./constant
 export const betweenBrackets: SingleParser<string> = C.char("(").drop()
     .then(F.moveUntil(")"))
     .then(C.char(")").drop())
-    .map((value) => value.array()[0]);
+    .first();
 export const whiteSpace = C.char(" ").rep().opt().drop();
 export const token = (parser: TupleParser<unknown> | SingleParser<unknown>): TupleParser<unknown> => parser.then(whiteSpace);
 // given a string with commas separate them into a list e.g "a,b,c" becomes["a","b","c"]

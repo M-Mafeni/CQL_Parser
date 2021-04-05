@@ -82,9 +82,12 @@ describe("CQL Parser", () => {
             expect(parseCql("(title ~ \"auto\")")).toEqual(makeTitleQuery("auto"));
         });
 
-        // TODO handle nested brackets
         test("Ignores nested brackets", () => {
             expect(parseCql("((title ~ \"auto\"))")).toEqual(makeTitleQuery("auto"));
+        });
+
+        test("handle brackets with list", () => {
+            expect(parseCql("(label in (\"test\", \"dev\", \"abc\"))")).toEqual(labelListQuery);
         });
     });
 
