@@ -26,7 +26,7 @@ function sepByCommasHelper() {
         );
 }
 
-const emptyString = F.eos().drop();
+export const emptyString = F.eos().drop();
 export const sepByCommas: SingleParser<string[]>  = sepByCommasBuilder().array().map(values => values.map(removeQuotes));
 const quoteParser = (quotationMark: "\"" | "'"): TupleParser<string> => C.char(quotationMark).drop()
     .then(F.moveUntil(quotationMark))

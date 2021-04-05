@@ -1,5 +1,5 @@
 import { C, F, SingleParser, Streams } from "@masala/parser";
-import { CQLAtom, CQLListAtom, CQLSingleAtom, CQLTerm, UnOp } from "../../types/cql";
+import { CQLListAtom, CQLSingleAtom, CQLTerm, UnOp } from "../../types/cql";
 import { CQL_LIST_OPERATORS, CQL_STRING_OPERATORS, CQL_UNARY_OPERATORS } from "./constants";
 import { InvalidQueryError } from "./error";
 import { betweenBrackets, betweenQuotesParser, getCqlField, getCqlOperator, sepByCommas, token, whiteSpace } from "./utility";
