@@ -1,12 +1,16 @@
-import { BinOp, CQLAtom, CQLSingleAtom } from "cql";
-import { CQL_BINARY_OPERATORS, CQL_FIELDS, CQL_LIST_OPERATORS, CQL_STRING_OPERATORS } from "../src/cql/parser/constants";
+import { BinOp, CQLAtom, CQLListAtom, CQLSingleAtom, UnOp } from "cql";
+import { CQL_BINARY_OPERATORS, CQL_FIELDS, CQL_LIST_OPERATORS, CQL_STRING_OPERATORS, CQL_UNARY_OPERATORS } from "../src/cql/parser/constants";
 
 
 export const makeTitleQuery = (value: string): CQLSingleAtom => makeSimpleQuery(CQL_STRING_OPERATORS.CONTAINS,value, CQL_FIELDS.TITLE);
 
 export const makeSpaceQuery = (value: string): CQLSingleAtom => makeSimpleQuery(CQL_STRING_OPERATORS.EQUALS,value, CQL_FIELDS.SPACE);
 
-export const makeLabelQuery = (value: string): CQLSingleAtom => makeSimpleQuery(CQL_STRING_OPERATORS.EQUALS,value, CQL_FIELDS.LABEL);
+export const makeLabelQuery = (value: string[]): CQLListAtom => ({
+    operator: CQL_LIST_OPERATORS.IN,
+    field: CQL_FIELDS.LABEL,
+    value
+});
 
 export const makeSimpleQuery = (operator: CQL_STRING_OPERATORS, value: string, field: CQL_FIELDS): CQLSingleAtom => ({
     operator,
@@ -57,3 +61,9 @@ export const precedenceQuery2: BinOp = {
     },
     term2: titleQuery
 };
+
+export const notQuery: UnOp = {
+    operator: CQL_UNARY_OPERATORS.NOT,
+    term: titleQuery,
+};
+

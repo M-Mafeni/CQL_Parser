@@ -1,6 +1,6 @@
 import { listParser, parseCql } from "../src/cql/parser/parser";
 import { InvalidQueryError } from "../src/cql/parser/error";
-import { spaceQuery, labelListQuery, multQuery, multQuery2, precedenceQuery, precedenceQuery2, makeTitleQuery } from "./testData";
+import { spaceQuery, labelListQuery, multQuery, multQuery2, precedenceQuery, precedenceQuery2, makeTitleQuery, makeLabelQuery, notQuery } from "./testData";
 import { betweenBrackets, removeQuotes, sepByCommas } from "../src/cql/parser/utility";
 import { Streams } from "@masala/parser";
 
@@ -73,6 +73,37 @@ describe("CQL Parser", () => {
         test("Can parse query with list with items not wrapped in quotes", () => {
             expect(parseCql("label in (test, dev, abc)")).toEqual(labelListQuery);
         });
+
+        test("Can parse query with singleton list", () => {
+            expect(parseCql("label in (test)")).toEqual(makeLabelQuery(["test"]));
+        });
+
+        test("Ignores brackets", () => {
+            expect(parseCql("(title ~ \"auto\")")).toEqual(makeTitleQuery("auto"));
+        });
+
+        // TODO handle nested brackets
+        test("Ignores nested brackets", () => {
+            expect(parseCql("((title ~ \"auto\"))")).toEqual(makeTitleQuery("auto"));
+        });
+    });
+
+    describe ("CQL Unop Parser", () =>{
+        test("can parse simple query", () => {
+            expect(parseCql("NOT title ~ \"auto\"")).toEqual(notQuery);
+        });
+
+        test("can parse simple query with brackets", () => {
+            expect(parseCql("NOT (title ~ \"auto\")")).toEqual(notQuery);
+        });
+
+        test("can parse simple query with brackets around everything", () => {
+            expect(parseCql("(NOT title ~ \"auto\")")).toEqual(notQuery);
+        });
+
+        test("can parse simple query with 2 sets of brackets", () => {
+            expect(parseCql("(NOT (title ~ \"auto\"))")).toEqual(notQuery);
+        });
     });
     
 
@@ -82,12 +113,7 @@ describe("CQL Parser", () => {
             .toEqual(multQuery);
         });
     
-    
-        test("Ignores brackets 1", () => {
-            expect(parseCql("(title ~ \"auto\")")).toEqual(makeTitleQuery("auto"));
-        });
-        
-        test("Ignores brackets 2", () => {
+        test("Ignores brackets", () => {
             expect(parseCql("(title ~ \"auto\") AND (space = 'DEV')")).toEqual(multQuery);
         });
     
@@ -111,6 +137,11 @@ describe("CQL Parser", () => {
     
         test("correct symbols but wrong usage throws errror", () => {
             expect(() => parseCql("title > \"auto\"")).toThrowError(InvalidQueryError);
+        });
+
+        test("Rejects empty list", () => {
+            console.log(parseCql("label in ()"));
+            expect( () => parseCql("label in ()")).toThrowError(InvalidQueryError);
         });
     });
 

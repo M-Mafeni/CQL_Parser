@@ -1,6 +1,6 @@
 import { C, F, SingleParser, Streams } from "@masala/parser";
-import { CQLAtom, CQLListAtom, CQLSingleAtom, CQLTerm } from "../../types/cql";
-import { CQL_LIST_OPERATORS, CQL_STRING_OPERATORS } from "./constants";
+import { CQLAtom, CQLListAtom, CQLSingleAtom, CQLTerm, UnOp } from "../../types/cql";
+import { CQL_LIST_OPERATORS, CQL_STRING_OPERATORS, CQL_UNARY_OPERATORS } from "./constants";
 import { InvalidQueryError } from "./error";
 import { betweenBrackets, betweenQuotesParser, getCqlField, getCqlOperator, sepByCommas, token, whiteSpace } from "./utility";
 
@@ -48,15 +48,37 @@ const cqlListAtomParser: SingleParser<CQLListAtom> = token(cqlFieldParser)
         field: getCqlField(String(tokens[0])),
         value: tokens[2] as string[]
     }));
-const cqlAtomParser: SingleParser<CQLAtom> = F.try(cqlSingleAtomParser)
-    .or(cqlListAtomParser);
-const cqlTermParser = whiteSpace
-    .then(cqlAtomParser).first();
+const cqlAtomParser: SingleParser<CQLTerm> = F.try(cqlSingleAtomParser)
+    .or(F.try(cqlListAtomParser))
+    .or(betweenBrackets.map((val) => {
+        const parseResponse = F.lazy(cqlTermParserBuilder).parse(Streams.ofString(val));
+        if(parseResponse.isAccepted()) {
+            return parseResponse.value;
+        }
+    }));
+
+const cqlUnaryOperatorParser: SingleParser<string> = C.string("not");
+const cqlUnopParser: SingleParser<UnOp> = token(cqlUnaryOperatorParser)
+    .then(F.lazy(cqlTermParserBuilder))
+    .array()
+    .map((tokens) => ({
+        operator: CQL_UNARY_OPERATORS.NOT,
+        term: tokens[1] as CQLTerm
+    }));
+
+function cqlTermParserBuilder() {
+    return cqlTermParser;
+}
+const cqlTermParser: SingleParser<CQLTerm>  = whiteSpace
+    .then(
+        F.try(cqlAtomParser)
+        .or(cqlUnopParser)
+        )    
+    .first();
 
 export function parseCql(query: string): CQLTerm | Error {
     const parseResponse = cqlTermParser.parse(Streams.ofString(query.toLowerCase()));
     if (parseResponse.isAccepted()) {
-        console.log(parseResponse.isAccepted);
         return parseResponse.value;
     } else {
         throw new InvalidQueryError();

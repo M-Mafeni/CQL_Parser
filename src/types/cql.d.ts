@@ -9,7 +9,7 @@ interface BinOp {
 
 interface UnOp {
     operator: CQL_UNARY_OPERATORS;
-    term1: CQLTerm;
+    term: CQLTerm;
 }
 
 type CQLAtom = CQLSingleAtom | CQLListAtom;

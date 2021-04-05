@@ -1,0 +1,10 @@
+CQLTerm := BinOp | UnOp | CQLAtom
+BinOp:=<CQLTerm><BINARY_Operator><CQLTerm>
+BINARY_Operator = "OR" | "AND"
+UnOp := <Unary_Operator><CQLTerm>
+Unary_Operator := "NOT"
+
+CQLAtom := <CQLSingleAtom> | <CQLListAtom> | "("<CQLTerm>")
+CQLSingleAtom := <Field><CQL_STRING_OPERATORS><value>
+Field := "ancestor" | "creator" | "label" | "parent" | "space" | "title"
+CQL_STRING_OPERATORS := "=" | "!=" | "~" | "!~"
