@@ -1,6 +1,8 @@
 import { parseCql } from "../src/cql/parser/parser";
 import { InvalidQueryError } from "../src/cql/parser/error";
 import { spaceQuery, labelListQuery, multQuery, multQuery2, precedenceQuery, precedenceQuery2, makeTitleQuery } from "./testData";
+import { betweenBrackets, sepByCommas } from "../src/cql/parser/utility";
+import { Streams } from "@masala/parser";
 
 describe("CQL Parser", () => {
     test("Can parse title query", () => {
@@ -58,7 +60,11 @@ describe("CQL Parser", () => {
         expect(parseCql("title ~ \"tim's plan\"")).toEqual(makeTitleQuery("tim's plan"));
     });
 
-    test("Can parse query with list", () => {
+    test("Can parse query with list with items wrapped in quotes", () => {
+        expect(parseCql("label in (\"test\", \"dev\", \"abc\")")).toEqual(labelListQuery);
+    });
+
+    test("Can parse query with list with items not wrapped in quotes", () => {
         expect(parseCql("label in (test, dev, abc)")).toEqual(labelListQuery);
     });
 
@@ -68,7 +74,12 @@ describe("CQL Parser", () => {
         .toEqual(multQuery);
     });
 
-    test("Ignores brackets", () => {
+
+    test("Ignores brackets 1", () => {
+        expect(parseCql("(title ~ \"auto\")")).toEqual(makeTitleQuery("auto"));
+    });
+    
+    test("Ignores brackets 2", () => {
         expect(parseCql("(title ~ \"auto\") AND (space = 'DEV')")).toEqual(multQuery);
     });
 
@@ -94,4 +105,38 @@ describe("CQL Parser", () => {
 
 });
 
+describe("Generic Parsers", () => {
+    test("Parses between brackets", () => {
+        const parseResponse = betweenBrackets.parse(Streams.ofString("(a,b,c)"));
+        expect(parseResponse.isAccepted()).toBe(true);
+        expect(parseResponse.value).toBe("a,b,c");
+    });
+
+    describe("Sep by Commas", () => {
+        test("Sep by commas separates values", () => {
+            const parseResponse = sepByCommas.parse(Streams.ofString("ad,b,c"));
+            console.log(parseResponse);
+            expect(parseResponse.isAccepted()).toBe(true);
+            expect(parseResponse.value).toEqual(["ad","b","c"]);
+        });
+    
+        test("Sep by commas rejects empty string", () => {
+            const parseResponse = sepByCommas.parse(Streams.ofString(""));
+            expect(parseResponse.isAccepted()).toBe(false);
+        });
+    
+        test("Sep by commas accepts single value", () => {
+            const parseResponse = sepByCommas.parse(Streams.ofString("abc"));
+            expect(parseResponse.isAccepted()).toBe(true);
+            expect(parseResponse.value).toEqual(["abc"]);
+        });
+    
+        test("Sep by commas incomplete fails", () => {
+            const parseResponse = sepByCommas.parse(Streams.ofString("abc,"));
+            expect(parseResponse.isAccepted()).toBe(false);
+        });
+    });
+
+   
+});
 
