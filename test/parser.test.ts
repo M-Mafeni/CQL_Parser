@@ -34,8 +34,12 @@ describe("CQL Parser", () => {
             expect(parseCql("title~\"auto\"")).toEqual(makeTitleQuery("auto"));
         });
     
-        test("Ignore extra whitespace", () => {
+        test("Ignore extra whitespace at the end", () => {
             expect(parseCql("title ~ \"auto\"     ")).toEqual(makeTitleQuery("auto"));
+        });
+
+        test("Ignore extra whitespace at the start", () => {
+            expect(parseCql("    title ~ \"auto\"")).toEqual(makeTitleQuery("auto"));
         });
     
         test("Forces quotation marks", () => {

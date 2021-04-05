@@ -2,7 +2,7 @@ import { C, F, SingleParser, Streams } from "@masala/parser";
 import { CQLAtom, CQLListAtom, CQLSingleAtom, CQLTerm } from "../../types/cql";
 import { CQL_LIST_OPERATORS, CQL_STRING_OPERATORS } from "./constants";
 import { InvalidQueryError } from "./error";
-import { betweenBrackets, betweenQuotesParser, getCqlField, getCqlOperator, sepByCommas, token } from "./utility";
+import { betweenBrackets, betweenQuotesParser, getCqlField, getCqlOperator, sepByCommas, token, whiteSpace } from "./utility";
 
 const cqlFieldParser: SingleParser<string> = F.try(C.string("ancestor"))
 .or(F.try(C.string("creator")))
@@ -50,7 +50,8 @@ const cqlListAtomParser: SingleParser<CQLListAtom> = token(cqlFieldParser)
     }));
 const cqlAtomParser: SingleParser<CQLAtom> = F.try(cqlSingleAtomParser)
     .or(cqlListAtomParser);
-const cqlTermParser = cqlAtomParser;
+const cqlTermParser = whiteSpace
+    .then(cqlAtomParser).first();
 
 export function parseCql(query: string): CQLTerm | Error {
     const parseResponse = cqlTermParser.parse(Streams.ofString(query.toLowerCase()));
