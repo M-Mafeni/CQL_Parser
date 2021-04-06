@@ -1,8 +1,8 @@
 import { C, F, SingleParser, Streams } from "@masala/parser";
 import { CQLListAtom, CQLSingleAtom, CQLTerm, UnOp } from "../../types/cql";
-import { CQL_LIST_OPERATORS, CQL_STRING_OPERATORS, CQL_UNARY_OPERATORS } from "./constants";
+import { CQL_BINARY_OPERATORS, CQL_FIELDS, CQL_LIST_OPERATORS, CQL_STRING_OPERATORS, CQL_UNARY_OPERATORS } from "./constants";
 import { InvalidQueryError } from "./error";
-import { betweenBrackets, betweenQuotesParser, getCqlField, getCqlOperator, isUnaryOperator, sepByCommas, token, whiteSpace } from "./utility";
+import { betweenBrackets, betweenQuotesParser, chainCQLTerms, getCqlField, getCqlOperator, sepByCommas, token, whiteSpace } from "./utility";
 
 const cqlFieldParser: SingleParser<string> = F.try(C.string("ancestor"))
 .or(F.try(C.string("creator")))
@@ -26,11 +26,11 @@ const cqlSingleAtomParser: SingleParser<CQLSingleAtom> = token(cqlFieldParser)
     .map((tokens) => tokens.array().map(String))
     .map((tokens) => ({
         operator: getCqlOperator(tokens[1]) as CQL_STRING_OPERATORS,
-        field: getCqlField(tokens[0]),
+        field: getCqlField(tokens[0]) as CQL_FIELDS,
         value: tokens[2]
     }));
 
-export const listParser: SingleParser<string[]> = betweenBrackets.map((stringBetweenBrackets) => {
+export const listParser: SingleParser<string[] | undefined> = betweenBrackets.map((stringBetweenBrackets) => {
     const parseResponse = sepByCommas.parse(Streams.ofString(stringBetweenBrackets));
     if(parseResponse.isAccepted()) {
         return parseResponse.value;
@@ -44,13 +44,13 @@ const cqlListAtomParser: SingleParser<CQLListAtom> = token(cqlFieldParser)
     .array()
     .map((tokens) => ({
         operator: getCqlOperator(String(tokens[1])) as CQL_LIST_OPERATORS,
-        field: getCqlField(String(tokens[0])),
+        field: getCqlField(String(tokens[0])) as CQL_FIELDS,
         value: tokens[2] as string[]
     }));
 
-const betweenBracketsExpr: SingleParser<CQLTerm> = C.char("(").drop().debug("found opening bracket", true)
+const betweenBracketsExpr: SingleParser<CQLTerm> = token(C.char("(")).drop().debug("found opening bracket", true)
     .then(F.try(F.lazy(cqlTermParserGenerator)).debug("parsed cql term"))
-    .then(C.char(")").drop().debug("found closing bracket"))
+    .then(token(C.char(")")).drop().debug("found closing bracket"))
     .first();
 
 const cqlAtomParser: SingleParser<CQLTerm> = F.try(cqlSingleAtomParser)
@@ -74,6 +74,17 @@ const cqlUnopParser: SingleParser<UnOp> = token(cqlUnaryOperatorParser).opt()
         
     } );
 
+const cqlAndBinopParser: SingleParser<CQLTerm>= F.lazy(cqlUnopParserGenerator)
+.then(token(C.string("and")).drop().then(F.lazy(cqlUnopParserGenerator)).optrep().array())
+.array()
+.map(tokens => {
+    console.log(tokens);
+    const term1 = tokens[0] as UnOp;
+    // Option Type isn't exported
+    // TODO make interface for Option type
+    const restTerms = tokens[1] as CQLTerm[];
+    return chainCQLTerms(term1, restTerms, CQL_BINARY_OPERATORS.AND);
+});
 function cqlTermParserGenerator() {
     return cqlTermParser;
 }
@@ -81,11 +92,16 @@ function cqlTermParserGenerator() {
 function cqlAtomParserGenerator() {
     return cqlAtomParser;
 }
+
+function cqlUnopParserGenerator() {
+    return cqlUnopParser;
+}
 const cqlTermParser: SingleParser<CQLTerm>  = whiteSpace
-    .then(cqlUnopParser)    
+    .then(cqlAndBinopParser)    
     .first();
 export function parseCql(query: string): CQLTerm | Error {
     const parseResponse = cqlTermParserGenerator().eos().parse(Streams.ofString(query.toLowerCase()));
+    console.log(parseResponse.value);
     if (parseResponse.isAccepted()) {
         return parseResponse.value;
     } else {

@@ -1,5 +1,6 @@
 import { F, C, TupleParser, SingleParser, Streams } from "@masala/parser";
-import { CQL_FIELDS, CQL_LIST_OPERATORS, CQL_STRING_OPERATORS, CQL_UNARY_OPERATORS } from "./constants";
+import { CQLTerm } from "cql";
+import { CQL_BINARY_OPERATORS, CQL_FIELDS, CQL_LIST_OPERATORS, CQL_STRING_OPERATORS } from "./constants";
 // Reject these characters for now as they have special meaning in CQL text searches
 
 export const betweenBrackets: SingleParser<string> = C.char("(").drop()
@@ -33,7 +34,7 @@ const quoteParser = (quotationMark: "\"" | "'"): TupleParser<string> => C.char(q
     .then(C.char(quotationMark).drop());
 export const betweenQuotesParser: TupleParser<string> = F.try(quoteParser("\""))  
     .or(quoteParser("'"));
-export function getCqlField(s: string): CQL_FIELDS {
+export function getCqlField(s: string): CQL_FIELDS | undefined {
     switch(s) {
         case "ancestor":
             return CQL_FIELDS.ANCESTOR;
@@ -47,10 +48,12 @@ export function getCqlField(s: string): CQL_FIELDS {
             return CQL_FIELDS.SPACE;
         case "title":
             return CQL_FIELDS.TITLE;
+        default:
+            return undefined;
     }
 }
 
-export function getCqlOperator(s: string): CQL_STRING_OPERATORS | CQL_LIST_OPERATORS {
+export function getCqlOperator(s: string): CQL_STRING_OPERATORS | CQL_LIST_OPERATORS| undefined {
     switch(s) {
         case "=":
             return CQL_STRING_OPERATORS.EQUALS;
@@ -78,6 +81,18 @@ export function removeQuotes(s: string) : string {
     }
 }
 
-export function isUnaryOperator(x: unknown) : boolean {
-    return x === CQL_UNARY_OPERATORS.NOT;
+export function chainCQLTerms(acc: CQLTerm, terms: CQLTerm[], operator: CQL_BINARY_OPERATORS): CQLTerm {
+    if (terms.length === 0) {
+        return acc;
+    } else {
+        const term2 = terms[0];
+        return chainCQLTerms({
+            operator,
+            term1: acc,
+            term2
+        },
+        terms.slice(1),
+        operator
+        );
+    }
 }

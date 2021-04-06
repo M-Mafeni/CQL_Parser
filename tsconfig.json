@@ -14,11 +14,11 @@
                 "node_modules/*",
                 "src/types/*"
             ]
-        }
+        },
+        "strict": true
     },
     "include": [
         "src/**/*",
         "test/**/*",
     ],
-    "strict": true
 }

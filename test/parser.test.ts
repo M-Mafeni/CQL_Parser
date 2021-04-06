@@ -1,6 +1,6 @@
 import { listParser, parseCql } from "../src/cql/parser/parser";
 import { InvalidQueryError } from "../src/cql/parser/error";
-import { spaceQuery, labelListQuery, multQuery, multQuery2, precedenceQuery, precedenceQuery2, makeTitleQuery, makeLabelQuery, notQuery } from "./testData";
+import { spaceQuery, labelListQuery, multipleAndQuery, multipleAndQuery2, precedenceQuery, precedenceQuery2, makeTitleQuery, makeLabelQuery, notQuery, multipleOrQuery, multipleChainAndQuery, makeOrQuery, makeSimpleQuery, makeSpaceQuery, makeAndQuery } from "./testData";
 import { betweenBrackets, removeQuotes, sepByCommas } from "../src/cql/parser/utility";
 import { Streams } from "@masala/parser";
 
@@ -111,17 +111,38 @@ describe("CQL Parser", () => {
     
 
     describe("CQL BinOp Parser", () => {
-        test("Can join 2 queries together", () => {
+        test("Can join 2 queries together with AND", () => {
             expect(parseCql("title ~ \"auto\" AND space = 'DEV'"))
-            .toEqual(multQuery);
+            .toEqual(multipleAndQuery);
+        });
+
+        test("Can join 2 queries together with OR", () => {
+            expect(parseCql("title ~ \"auto\" OR space = 'DEV'"))
+            .toEqual(multipleOrQuery);
+        });
+
+        test("Can chain multiple ANDs with brackets", () => {
+            expect(parseCql("label = 'test' AND (title ~ \"auto\" AND space = 'DEV')"))
+            .toEqual(multipleChainAndQuery);
+        });
+
+        test("Can chain multiple ANDs without brackets", () => {
+            expect(parseCql("label in ('test') AND title ~ \"auto\" AND space = 'DEV'"))
+            .toEqual(makeAndQuery(
+                makeAndQuery(
+                    makeLabelQuery(["test"]),
+                    makeTitleQuery("auto")
+                ),
+                makeSpaceQuery("dev")
+                ));
         });
     
         test("Ignores brackets", () => {
-            expect(parseCql("(title ~ \"auto\") AND (space = 'DEV')")).toEqual(multQuery);
+            expect(parseCql("(title ~ \"auto\") AND (space = 'DEV')")).toEqual(multipleAndQuery);
         });
     
         test("Test Associativity", () => {
-            expect(parseCql("space = 'DEV' AND title ~ \"auto\"")).toEqual(multQuery2);
+            expect(parseCql("space = 'DEV' AND title ~ \"auto\"")).toEqual(multipleAndQuery2);
         });
     
         test("Correct precedence", () => {
@@ -214,7 +235,9 @@ describe("Generic Parsers", () => {
     test("get values between brackets" , () => {
         const parseResponse = listParser.parse(Streams.ofString("(a,b,c)"));
         expect(parseResponse.isAccepted()).toBe(true);
-        expect(parseResponse.value.sort()).toEqual(["a","b","c"]);
+        expect(parseResponse.value).toBeTruthy();
+        const items = parseResponse.value as string[];
+        expect(items.sort()).toEqual(["a","b","c"]);
     });
    
 });
