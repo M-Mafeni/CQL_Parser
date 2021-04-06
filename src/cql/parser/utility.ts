@@ -1,5 +1,5 @@
 import { F, C, TupleParser, SingleParser, Streams } from "@masala/parser";
-import { CQL_FIELDS, CQL_LIST_OPERATORS, CQL_STRING_OPERATORS } from "./constants";
+import { CQL_FIELDS, CQL_LIST_OPERATORS, CQL_STRING_OPERATORS, CQL_UNARY_OPERATORS } from "./constants";
 // Reject these characters for now as they have special meaning in CQL text searches
 
 export const betweenBrackets: SingleParser<string> = C.char("(").drop()
@@ -76,4 +76,8 @@ export function removeQuotes(s: string) : string {
         // If it couldn't parse might mean string should be left as is
         return s;
     }
+}
+
+export function isUnaryOperator(x: unknown) : boolean {
+    return x === CQL_UNARY_OPERATORS.NOT;
 }

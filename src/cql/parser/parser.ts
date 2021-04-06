@@ -2,7 +2,7 @@ import { C, F, SingleParser, Streams } from "@masala/parser";
 import { CQLListAtom, CQLSingleAtom, CQLTerm, UnOp } from "../../types/cql";
 import { CQL_LIST_OPERATORS, CQL_STRING_OPERATORS, CQL_UNARY_OPERATORS } from "./constants";
 import { InvalidQueryError } from "./error";
-import { betweenBrackets, betweenQuotesParser, getCqlField, getCqlOperator, sepByCommas, token, whiteSpace } from "./utility";
+import { betweenBrackets, betweenQuotesParser, getCqlField, getCqlOperator, isUnaryOperator, sepByCommas, token, whiteSpace } from "./utility";
 
 const cqlFieldParser: SingleParser<string> = F.try(C.string("ancestor"))
 .or(F.try(C.string("creator")))
@@ -49,7 +49,7 @@ const cqlListAtomParser: SingleParser<CQLListAtom> = token(cqlFieldParser)
     }));
 
 const betweenBracketsExpr: SingleParser<CQLTerm> = C.char("(").drop().debug("found opening bracket", true)
-    .then(F.try(F.lazy(cqlTermParserBuilder)).debug("parsed cql term"))
+    .then(F.try(F.lazy(cqlTermParserGenerator)).debug("parsed cql term"))
     .then(C.char(")").drop().debug("found closing bracket"))
     .first();
 
@@ -58,24 +58,34 @@ const cqlAtomParser: SingleParser<CQLTerm> = F.try(cqlSingleAtomParser)
     .or(betweenBracketsExpr);
 
 const cqlUnaryOperatorParser: SingleParser<string> = C.string("not");
-const cqlUnopParser: SingleParser<UnOp> = token(cqlUnaryOperatorParser)
-    .then(F.lazy(cqlTermParserBuilder))
+const cqlUnopParser: SingleParser<UnOp> = token(cqlUnaryOperatorParser).opt()
+    .then(F.lazy(cqlAtomParserGenerator))
     .array()
-    .map((tokens) => ({
-        operator: CQL_UNARY_OPERATORS.NOT,
-        term: tokens[1] as CQLTerm
-    }));
+    .map(([val, term]) =>{
+        console.log(val);
+        if (val.isPresent()) {
+            return {
+                operator: CQL_UNARY_OPERATORS.NOT,
+                term: term as CQLTerm
+            };
+        } else {
+            return term;
+        }
+        
+    } );
 
-function cqlTermParserBuilder() {
+function cqlTermParserGenerator() {
     return cqlTermParser;
-} 
+}
+
+function cqlAtomParserGenerator() {
+    return cqlAtomParser;
+}
 const cqlTermParser: SingleParser<CQLTerm>  = whiteSpace
-    .then(
-        F.try(cqlAtomParser)
-        .or(cqlUnopParser))    
+    .then(cqlUnopParser)    
     .first();
 export function parseCql(query: string): CQLTerm | Error {
-    const parseResponse = cqlTermParserBuilder().eos().parse(Streams.ofString(query.toLowerCase()));
+    const parseResponse = cqlTermParserGenerator().eos().parse(Streams.ofString(query.toLowerCase()));
     if (parseResponse.isAccepted()) {
         return parseResponse.value;
     } else {
