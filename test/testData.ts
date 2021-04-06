@@ -46,6 +46,12 @@ export const labelListQuery: CQLAtom = {
     value: ["test", "dev", "abc"]
 };
 
+export const labelListNegQuery: CQLAtom = {
+    operator: CQL_LIST_OPERATORS.NOT_IN,
+    field: CQL_FIELDS.LABEL,
+    value: ["test", "dev", "abc"]
+};
+
 export const multipleAndQuery: BinOp = {
     operator: CQL_BINARY_OPERATORS.AND,
     term1: titleQuery,

@@ -1,6 +1,6 @@
 import { listParser, parseCql } from "../src/cql/parser/parser";
 import { InvalidQueryError } from "../src/cql/parser/error";
-import { spaceQuery, labelListQuery, multipleAndQuery, multipleAndQuery2, precedenceQuery, precedenceQuery2, makeTitleQuery, makeLabelQuery, notQuery, multipleOrQuery, multipleChainAndQuery, makeOrQuery, makeSimpleQuery, makeSpaceQuery, makeAndQuery } from "./testData";
+import { spaceQuery, labelListQuery, multipleAndQuery, multipleAndQuery2, precedenceQuery, precedenceQuery2, makeTitleQuery, makeLabelQuery, notQuery, multipleOrQuery, multipleChainAndQuery, makeOrQuery, makeSimpleQuery, makeSpaceQuery, makeAndQuery, labelListNegQuery } from "./testData";
 import { betweenBrackets, removeQuotes, sepByCommas } from "../src/cql/parser/utility";
 import { Streams } from "@masala/parser";
 
@@ -68,6 +68,10 @@ describe("CQL Parser", () => {
     
         test("Can parse query with list with items wrapped in quotes", () => {
             expect(parseCql("label in (\"test\", \"dev\", \"abc\")")).toEqual(labelListQuery);
+        });
+
+        test("Can parse query with 'not in' as operator", () => {
+            expect(parseCql("label not in (\"test\", \"dev\", \"abc\")")).toEqual(labelListNegQuery);
         });
     
         test("Can parse query with list with items not wrapped in quotes", () => {
@@ -225,10 +229,6 @@ describe("Generic Parsers", () => {
         test("allows nested quotes", () => {
             expect(removeQuotes("\"ab'c\"")).toBe("ab'c");
         });
-
-        // test("allows nested quotes", () => {
-        //     expect(removeQuotes("ab\"c")).toBe("ab\"c");
-        // });
 
     });
 

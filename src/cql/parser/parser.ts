@@ -1,5 +1,5 @@
 import { C, F, SingleParser, Streams } from "@masala/parser";
-import { CQLListAtom, CQLSingleAtom, CQLTerm, UnOp } from "../../types/cql";
+import { BinOp, CQLListAtom, CQLSingleAtom, CQLTerm, UnOp } from "../../types/cql";
 import { CQL_BINARY_OPERATORS, CQL_FIELDS, CQL_LIST_OPERATORS, CQL_STRING_OPERATORS, CQL_UNARY_OPERATORS } from "./constants";
 import { InvalidQueryError } from "./error";
 import { betweenBrackets, betweenQuotesParser, chainCQLTerms, getCqlField, getCqlOperator, sepByCommas, token, whiteSpace } from "./utility";
@@ -74,17 +74,24 @@ const cqlUnopParser: SingleParser<UnOp> = token(cqlUnaryOperatorParser).opt()
         
     } );
 
-const cqlAndBinopParser: SingleParser<CQLTerm>= F.lazy(cqlUnopParserGenerator)
+const cqlAndBinopParser: SingleParser<CQLTerm> = F.lazy(cqlUnopParserGenerator)
 .then(token(C.string("and")).drop().then(F.lazy(cqlUnopParserGenerator)).optrep().array())
 .array()
 .map(tokens => {
-    console.log(tokens);
     const term1 = tokens[0] as UnOp;
-    // Option Type isn't exported
-    // TODO make interface for Option type
     const restTerms = tokens[1] as CQLTerm[];
     return chainCQLTerms(term1, restTerms, CQL_BINARY_OPERATORS.AND);
 });
+
+const cqlOrBinopParser: SingleParser<CQLTerm> = F.lazy(cqlAndBinopParserGenerator)
+.then(token(C.string("or")).drop().then(F.lazy(cqlAndBinopParserGenerator)).optrep().array())
+.array()
+.map(tokens => {
+    const term1 = tokens[0] as CQLTerm;
+    const restTerms = tokens[1] as CQLTerm[];
+    return chainCQLTerms(term1, restTerms, CQL_BINARY_OPERATORS.OR);
+});
+
 function cqlTermParserGenerator() {
     return cqlTermParser;
 }
@@ -96,12 +103,16 @@ function cqlAtomParserGenerator() {
 function cqlUnopParserGenerator() {
     return cqlUnopParser;
 }
+
+function cqlAndBinopParserGenerator() {
+    return cqlAndBinopParser;
+}
+
 const cqlTermParser: SingleParser<CQLTerm>  = whiteSpace
-    .then(cqlAndBinopParser)    
+    .then(cqlOrBinopParser)    
     .first();
 export function parseCql(query: string): CQLTerm | Error {
     const parseResponse = cqlTermParserGenerator().eos().parse(Streams.ofString(query.toLowerCase()));
-    console.log(parseResponse.value);
     if (parseResponse.isAccepted()) {
         return parseResponse.value;
     } else {
