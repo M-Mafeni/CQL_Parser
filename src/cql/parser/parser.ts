@@ -1,5 +1,5 @@
-import { C, F, SingleParser, Streams } from "@masala/parser";
-import { BinOp, CQLListAtom, CQLSingleAtom, CQLTerm, UnOp } from "../../types/cql";
+import { C, F, SingleParser, Streams, VoidParser } from "@masala/parser";
+import { CQLListAtom, CQLSingleAtom, CQLTerm, UnOp } from "../../types/cql";
 import { CQL_BINARY_OPERATORS, CQL_FIELDS, CQL_LIST_OPERATORS, CQL_STRING_OPERATORS, CQL_UNARY_OPERATORS } from "./constants";
 import { InvalidQueryError } from "./error";
 import { betweenBrackets, betweenQuotesParser, chainCQLTerms, getCqlField, getCqlOperator, sepByCommas, token, whiteSpace } from "./utility";
@@ -30,10 +30,12 @@ const cqlSingleAtomParser: SingleParser<CQLSingleAtom> = token(cqlFieldParser)
         value: tokens[2]
     }));
 
-export const listParser: SingleParser<string[] | undefined> = betweenBrackets.map((stringBetweenBrackets) => {
+export const listParser: SingleParser<string[]> = betweenBrackets.flatMap((stringBetweenBrackets) => {
     const parseResponse = sepByCommas.parse(Streams.ofString(stringBetweenBrackets));
     if(parseResponse.isAccepted()) {
-        return parseResponse.value;
+        return F.returns(parseResponse.value);
+    } else {
+        return F.error().returns([]);
     }
 });
 
@@ -62,7 +64,6 @@ const cqlUnopParser: SingleParser<UnOp> = token(cqlUnaryOperatorParser).opt()
     .then(F.lazy(cqlAtomParserGenerator))
     .array()
     .map(([val, term]) =>{
-        console.log(val);
         if (val.isPresent()) {
             return {
                 operator: CQL_UNARY_OPERATORS.NOT,

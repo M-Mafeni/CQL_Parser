@@ -168,7 +168,6 @@ describe("CQL Parser", () => {
         });
 
         test("Rejects empty list", () => {
-            console.log(parseCql("label in ()"));
             expect( () => parseCql("label in ()")).toThrowError(InvalidQueryError);
         });
     });
