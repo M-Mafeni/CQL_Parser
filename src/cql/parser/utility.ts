@@ -187,7 +187,7 @@ export function isValidCQLAtom(cqlAtom: CQLAtom): boolean {
 
 }
 
-export function checkValidCqlAtom(term: CQLAtom) : SingleParser<CQLAtom> {
+export function checkValidCqlAtom(term: CQLAtom) : SingleParser<CQLAtom | null> {
     if (isValidCQLAtom(term)) {
         return F.returns(term);
     } else {
