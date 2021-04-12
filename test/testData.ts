@@ -30,6 +30,12 @@ export const makeAndQuery = (term1: CQLTerm, term2: CQLTerm): BinOp => ({
     term2,
 });
 
+export const makeListQuery = (operator: CQL_LIST_OPERATORS, value: string[], field: CQL_FIELDS): CQLListAtom => ({
+    operator,
+    field,
+    value
+});
+
 
 const titleQuery = makeTitleQuery("auto");
 export const spaceQuery: CQLAtom = makeSpaceQuery("dev");
