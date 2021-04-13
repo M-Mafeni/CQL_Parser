@@ -30,5 +30,6 @@ export enum CQL_FIELDS {
     LABEL = "label",
     PARENT = "parent",
     SPACE = "space",
-    TITLE = "title"
+    TITLE = "title",
+    TYPE = "type"
 }

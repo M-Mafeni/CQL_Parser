@@ -16,11 +16,12 @@ import {
     precedenceQuery2,
     spaceQuery
 } from "./testData";
-import {betweenBrackets, removeQuotes, sepByCommas} from "../src/cql/parser/utility";
 import {Streams} from "@masala/parser";
-import {listParser, parseCql} from "../src/cql/parser/parser";
+import {parseCql} from "../src/cql/parser/parser";
 import {InvalidQueryError} from "../src/cql/parser/error";
 import {CQL_FIELDS, CQL_LIST_OPERATORS, CQL_STRING_OPERATORS} from "../src/cql/parser/constants";
+import {listParser} from "../src/cql/parser/utility/helpers";
+import {betweenBrackets, removeQuotes, sepByCommas} from "../src/cql/parser/utility/utility";
 
 describe("CQL Parser", () => {
 
@@ -109,7 +110,7 @@ describe("CQL Parser", () => {
                 expect(parseCql("label in (test    , abc)")).toEqual(makeLabelQuery(["test", "abc"]));
             });
 
-            test("Throws error if space isn't wrapped in quotes", () => {
+            test("Throws error if space character isn't wrapped in quotes", () => {
                 expect(() => parseCql("label in (test dev, abc)")).toThrowError(InvalidQueryError);
             });
 
@@ -128,41 +129,46 @@ describe("CQL Parser", () => {
 
         describe("Correct Logic", () => {
 
+            describe("operators", () => {
+                test("~ with ancestor throws error", () => {
+                    expect(() => parseCql("ancestor ~ '123'")).toThrowError(InvalidQueryError);
+                });
 
-            test("~ with ancestor throws error", () => {
-                expect(() => parseCql("ancestor ~ '123'")).toThrowError(InvalidQueryError);
-            });
+                test("~ with creator throws error", () => {
+                    expect(() => parseCql("creator ~ '123'")).toThrowError(InvalidQueryError);
+                });
 
-            test("~ with creator throws error", () => {
-                expect(() => parseCql("creator ~ '123'")).toThrowError(InvalidQueryError);
-            });
+                test("~ with label throws error", () => {
+                    expect(() => parseCql("label ~ '123'")).toThrowError(InvalidQueryError);
+                });
 
-            test("~ with label throws error", () => {
-                expect(() => parseCql("label ~ '123'")).toThrowError(InvalidQueryError);
-            });
+                test("~ with parent throws error", () => {
+                    expect(() => parseCql("parent ~ '123'")).toThrowError(InvalidQueryError);
+                });
 
-            test("~ with parent throws error", () => {
-                expect(() => parseCql("parent ~ '123'")).toThrowError(InvalidQueryError);
-            });
+                test("~ with space throws error", () => {
+                    expect(() => parseCql("space ~ '123'")).toThrowError(InvalidQueryError);
+                });
 
-            test("~ with space throws error", () => {
-                expect(() => parseCql("space ~ '123'")).toThrowError(InvalidQueryError);
-            });
+                test("~ with type throws error", () => {
+                    expect(() => parseCql("type ~ page")).toThrowError(InvalidQueryError);
+                });
 
-            test("'in' operator with parent throws error", () => {
-                expect(() => parseCql("parent in (123, 456)")).toThrowError(InvalidQueryError);
-            });
+                test("'in' operator with parent throws error", () => {
+                    expect(() => parseCql("parent in (123, 456)")).toThrowError(InvalidQueryError);
+                });
 
-            test("'not  in' operator with parent throws error", () => {
-                expect(() => parseCql("parent not in (123, 456)")).toThrowError(InvalidQueryError);
-            });
+                test("'not  in' operator with parent throws error", () => {
+                    expect(() => parseCql("parent not in (123, 456)")).toThrowError(InvalidQueryError);
+                });
 
-            test("'in' operator with title throws error", () => {
-                expect(() => parseCql("title in (123, 456)")).toThrowError(InvalidQueryError);
-            });
+                test("'in' operator with title throws error", () => {
+                    expect(() => parseCql("title in (123, 456)")).toThrowError(InvalidQueryError);
+                });
 
-            test("'not in' operator with title throws error", () => {
-                expect(() => parseCql("title not in (123, 456)")).toThrowError(InvalidQueryError);
+                test("'not in' operator with title throws error", () => {
+                    expect(() => parseCql("title not in (123, 456)")).toThrowError(InvalidQueryError);
+                });
             });
 
             describe("validation", () => {
@@ -211,6 +217,30 @@ describe("CQL Parser", () => {
                     expect( parseCql("space in (abcd,efg)")).toEqual(makeListQuery(CQL_LIST_OPERATORS.IN, ["abcd","efg"], CQL_FIELDS.SPACE ));
                 });
             });
+
+            // space.key === space in cql
+            test("space.key also works", () => {
+                expect(parseCql("space.key = ABC")).toEqual(makeSimpleQuery(CQL_STRING_OPERATORS.EQUALS, "abc", CQL_FIELDS.SPACE));
+            });
+
+            describe("type field", () => {
+                test("only allows certain constants", () => {
+                    expect(parseCql("type = page")).toEqual(makeSimpleQuery(CQL_STRING_OPERATORS.EQUALS, "page", CQL_FIELDS.TYPE));
+                    expect(parseCql("type = blogpost")).toEqual(makeSimpleQuery(CQL_STRING_OPERATORS.EQUALS, "blogpost", CQL_FIELDS.TYPE));
+                    expect(parseCql("type = comment")).toEqual(makeSimpleQuery(CQL_STRING_OPERATORS.EQUALS, "comment", CQL_FIELDS.TYPE));
+                    expect(parseCql("type = attachment")).toEqual(makeSimpleQuery(CQL_STRING_OPERATORS.EQUALS, "attachment", CQL_FIELDS.TYPE));
+                });
+
+                test("allows list operator", () => {
+                    expect(parseCql("type IN (blogpost, page)")).toEqual(makeListQuery(CQL_LIST_OPERATORS.IN, ["blogpost","page"], CQL_FIELDS.TYPE));
+                });
+
+                test("rejects Invalid values", () => {
+                    expect(() => parseCql("type = xyz")).toThrow(InvalidQueryError);
+                });
+            });
+
+
         });
     });
 

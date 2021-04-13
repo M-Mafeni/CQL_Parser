@@ -15,10 +15,11 @@
                 "src/types/*"
             ]
         },
-        "strict": true
+        "strict": true,
+        "declaration": true
     },
     "include": [
         "src/**/*",
-        "test/**/*",
-    ],
+        "test/**/*"
+    ]
 }

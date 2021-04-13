@@ -1,5 +1,5 @@
-import { BinOp, CQLAtom, CQLListAtom, CQLSingleAtom, CQLTerm, UnOp } from "cql";
 import { CQL_BINARY_OPERATORS, CQL_FIELDS, CQL_LIST_OPERATORS, CQL_STRING_OPERATORS, CQL_UNARY_OPERATORS } from "../src/cql/parser/constants";
+import {BinOp, CQLAtom, CQLListAtom, CQLSingleAtom, CQLTerm, UnOp} from "../src/cql/parser/types";
 
 
 export const makeTitleQuery = (value: string): CQLSingleAtom => makeSimpleQuery(CQL_STRING_OPERATORS.CONTAINS,value, CQL_FIELDS.TITLE);

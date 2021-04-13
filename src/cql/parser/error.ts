@@ -1,7 +1,6 @@
 export class InvalidQueryError extends Error {
-    constructor() {
-        super();
-        this.message = "query could not be parsed";
+    constructor(message: string) {
+        super(message);
         this.name = "InvalidQueryError";
     }
 }
