@@ -1,5 +1,4 @@
 import {C, F, SingleParser, Streams} from "@masala/parser";
-import {CQLListAtom, CQLSingleAtom, CQLTerm, UnOp} from "./types";
 import {
     CQL_BINARY_OPERATORS,
     CQL_FIELDS,
@@ -11,6 +10,7 @@ import {InvalidQueryError} from "./error";
 import {betweenQuotesParser, chainCQLTerms, token, whiteSpace} from "./utility/utility";
 import {validateCqlAtom} from "./utility/validation";
 import {cqlFieldParser, cqlListOperatorParser, cqlStringOperatorParser, listParser} from "./utility/helpers";
+import {CQLListAtom, CQLSingleAtom, CQLTerm, UnOp} from "./types";
 
 // CQLSingleAtom := <keywordToken><operatorToken><wordInQuotesToken>
 const cqlSingleAtomParser: SingleParser<CQLSingleAtom> = token(cqlFieldParser)

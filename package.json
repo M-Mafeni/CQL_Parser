@@ -11,18 +11,8 @@
     "main": "dist/src/index.js",
     "types": "dist/src/index.d.ts",
     "scripts": {
-        "prepublish": "npm run build",
-        "build": "rimRaf dist && tsc",
-        "debug": "npm run build && npm run watch-debug",
-        "lint": "tsc --noEmit && eslint \"**/*.{js,ts}\" --quiet --fix",
-        "serve-debug": "nodemon --inspect dist/index.js",
-        "serve": "node dist/src/index.js",
-        "start": "npm run serve",
-        "restart": "npm run build && npm start",
-        "test": "jest --forceExit",
-        "watch-node": "nodemon dist/server.js",
-        "watch-test": "npm run test -- --watchAll",
-        "watch-ts": "tsc -w"
+        "prepublish": "npm run build && npm version patch",
+        "build": "rimRaf dist && tsc"
     },
     "dependencies": {
         "@masala/parser": "^1.0.0"

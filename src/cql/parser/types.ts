@@ -12,7 +12,7 @@ export interface UnOp {
     term: CQLTerm;
 }
 
-type CQLAtom = CQLSingleAtom | CQLListAtom;
+export type CQLAtom = CQLSingleAtom | CQLListAtom;
 
 export interface CQLSingleAtom {
     operator: CQL_STRING_OPERATORS;
