@@ -2,13 +2,16 @@
     "name": "cql-parser",
     "version": "1.0.0",
     "description": "A library for parsing a subset of the Confluence Query Language",
-    "repository": "NONE",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/M-Mafeni/CQL_Parser"
+    },
     "author": "Michael Mafeni",
     "license": "ISC",
     "main": "dist/src/index.js",
     "types": "dist/src/index.d.ts",
     "scripts": {
-        "prepublish": "tsc",
+        "prepublish": "npm run build",
         "build": "rimRaf dist && tsc",
         "debug": "npm run build && npm run watch-debug",
         "lint": "tsc --noEmit && eslint \"**/*.{js,ts}\" --quiet --fix",
